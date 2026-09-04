@@ -1,0 +1,26 @@
+# ==========================================
+# .dockerignore
+# ==========================================
+
+# 1. Secretos
+.env
+
+# 2. Historial de Git 
+.git
+.gitignore
+
+# 3. Dependencias locales 
+node_modules/
+venv/
+env/
+.venv/
+vendor/
+
+# 4. Archivos que no necesita el contenedor para correr
+README.md
+docker-compose.yml
+.dockerignore
+k8s/
+tests/
+.vscode/
+.idea/
