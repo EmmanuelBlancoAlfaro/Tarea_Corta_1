@@ -41,6 +41,7 @@ Durante la configuración de este entorno, nos enfrentamos con los siguientes pr
 3. **Herramientas faltantes en Alpine:** En los chequeos de salud (*healthcheck*) de la API intentamos usar `curl`, pero al utilizar `node:alpine` como imagen base, el sistema operativo ligero no lo traía instalado. Lo solucionamos cambiando la validación por `wget`.
 4. **Mapeo de puertos internos vs externos:** Aprendimos a diferenciar correctamente los puertos de red: los contenedores se comunican internamente por sus puertos predeterminados (como el `5432` de Postgres), mientras que los puertos externos (`5433:5432`) se reservaron exclusivamente para la máquina anfitriona.
 - Entidad con estado real db/init.sql:
+## Entidad con estado real db/init.sql:
 
 ## Script de inicialización
 
@@ -49,8 +50,7 @@ init.sql: Se define la tabla en postgres donde vivira la entidad con estado real
     - username: nombre del usuario
     - email: correo del usuario
     - created_at: fecha de creación, se coloca en default para que sea la fecha y hora actual.
-
-
+    
 ## Explicación del docker-compose.yml:
 
 - Imagen: La imagen elegida fue la postgres:15-alpine, se eligió una versión específica en vez de usar "latest", por si en algun momento una versión más reciente venga con errores y no nos cause problemas. El alpine se uso para que el contenedor pese mucho menos, hace que se descargue y arranque mucho mas rapido.
