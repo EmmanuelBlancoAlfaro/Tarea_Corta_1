@@ -45,8 +45,8 @@ app.get('/ready', async (req, res) => {
     }
 });
 
-// POST
 
+// POST
 // Crear un nuevo usuario
 app.post('/users', async (req, res) => {
     try {
@@ -58,11 +58,33 @@ app.post('/users', async (req, res) => {
                 error: "Faltan campos obligatorios (username, email)" 
             });
         }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        // Validación 2: Formato de email
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                error: "Formato de email inválido" 
+            });
+        }
+        
+        // Validación 3: Longitud del username
+        if (username.length < 3 || username.length > 20) {
+            return res.status(400).json({ 
+                error: "El username debe tener entre 3 y 20 caracteres" 
+            });
+        }
+
+        // 4. Validar que el username no tenga números (/\d/ busca cualquier dígito)
+        const tieneNumeros = /\d/.test(username);
+        if (tieneNumeros) {
+            return res.status(400).json({ error: "El username no puede contener números" });
+        }
 
         const query = 'INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *';
         const values = [username, email];
         const result = await pool.query(query, values);
         res.status(201).json(result.rows[0]);
+
     } catch (error) {
         if (error.code === '23505') {
             return res.status(400).json({ 
