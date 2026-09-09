@@ -13,7 +13,7 @@ FROM node:alpine AS runner
 
 WORKDIR /app
 
-EXPOSE 3000
+EXPOSE ${PORT}
 
 COPY --from=builder /build ./
 
