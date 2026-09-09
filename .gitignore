@@ -40,3 +40,5 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# 7. Bruno local or temporary files
+Untitled.yml

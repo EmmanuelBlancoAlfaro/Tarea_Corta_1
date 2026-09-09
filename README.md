@@ -1,7 +1,17 @@
 # Tarea_Corta_1
 Tarea Corta 1  - Contenerización de un servicio con Docker
 
-- Entidad con estado real db/init.sql:
+## Justificacion de elección de imagen y Dockerfile
+
+### Selección de la imagen base
+
+Utilizamos node : alpine porque es una imagen base oficial mucho más ligera que la versión completa de Node, lo que aumenta la seguridad porque trae menos herramientsa, y reduce el peso del contenedor.
+
+### Contenido de la imagen
+
+Construimos el dockerfile usando multi-stage build, para poder aprovechar la manera en que Docker va apilando las capas de la imagen y poder aprovechar la caché. También usamos un archivo .dockerignore, para que los archivos de desarrollo, historiales de Git y código innecesario no lleguen a la imagen.
+
+## Entidad con estado real db/init.sql:
 
 init.sql: Se define la tabla en postgres donde vivira la entidad con estado real, se decidio crear la tabla como user, con las columnas:
     - id: identificador
@@ -9,7 +19,9 @@ init.sql: Se define la tabla en postgres donde vivira la entidad con estado real
     - email: correo del usuario
     - created_at: fecha de creación, se coloca en default para que sea la fecha y hora actual.
 
-- Docker compose docker-compose.yml:
+### Justificación de eleccion de docker compose
+
+## Docker compose docker-compose.yml:
 
     Imagen: La imagen elegida fue la postgres:15-alpine, se eligió una versión específica en vez de usar "latest", por si en algun momento una versión más reciente venga con errores y no nos cause problemas. El alpine se uso para que el contenedor pese mucho menos, hace que se descargue y arranque mucho mas rapido.
 
