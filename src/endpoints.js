@@ -45,6 +45,31 @@ app.get('/ready', async (req, res) => {
     }
 });
 
+// Ruta para obtener todos los usuarios
+app.get('/users', async (req, res) => {
+    try { 
+        const { created_at } = req.query; // EJ: /users?created_at=2026-09-09
+        let query = 'SELECT * FROM users';
+        let values = [];
+        
+        // Si envian un parametro de fecha, filtra los usuarios por esa fecha
+        if (created_at) {
+            // Creamos el rango para abarcar todo el día seleccionado
+            const startDate = `${created_at} 00:00:00`;
+            const endDate = `${created_at} 23:59:59`;
+
+            query += ' WHERE created_at >= $1 AND created_at <= $2';
+            values.push(startDate, endDate);
+        }
+
+        query += ' ORDER BY id ASC';
+
+        const result = await pool.query(query, values);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // POST
 // Crear un nuevo usuario
@@ -91,7 +116,7 @@ app.post('/users', async (req, res) => {
                 error: "El username o el email ya están registrados" 
             });
         }
-        res.status(500).json({ error: error.message });
+        res.status(400).json({ error: error.message });
     }
 });
 
