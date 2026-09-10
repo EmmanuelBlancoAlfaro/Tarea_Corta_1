@@ -71,6 +71,22 @@ app.get('/users', async (req, res) => {
     }
 });
 
+app.get('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = 'SELECT * FROM users WHERE id = $1';
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST
 // Crear un nuevo usuario
 app.post('/users', async (req, res) => {
@@ -189,6 +205,21 @@ app.put('/users/:id', async (req, res) => {
     }
 });
 
+// DELETE
+// Eliminar un usuario existente
+app.delete('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = 'DELETE FROM users WHERE id = $1';
+        const result = await pool.query(query, [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+        res.sendStatus(204);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
