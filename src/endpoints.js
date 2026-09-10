@@ -120,6 +120,76 @@ app.post('/users', async (req, res) => {
     }
 });
 
+// PUT
+// Actualizar un usuario existente
+app.put('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { username, email } = req.body;
+
+        // Validación 1: Campos vacíos
+        if (!username || !email) {
+            return res.status(400).json({ 
+                error: "Faltan campos obligatorios (username, email)" 
+            });
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // Validación 2: Formato de email
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                error: "Formato de email inválido" 
+            });
+        }
+
+        // Validación 3: Longitud del username
+        if (username.length < 3 || username.length > 20) {
+            return res.status(400).json({ 
+                error: "El username debe tener entre 3 y 20 caracteres" 
+            });
+        }
+
+        // 4. Validar que el username no tenga números (/\d/ busca cualquier dígito)
+        const tieneNumeros = /\d/.test(username);
+        if (tieneNumeros) {
+            return res.status(400).json({ error: "El username no puede contener números" });
+        }
+
+        // Construimos la consulta dinámica de actualización de forma segura, por si se desea unicamente cambiar el username o el email, sin afectar el otro campo.
+        let fields = [];
+        let values = [];
+        let index = 1;
+
+        if (username) {
+            fields.push(`username = $${index++}`);
+            values.push(username);
+        }
+        if (email) {
+            fields.push(`email = $${index++}`);
+            values.push(email);
+        }
+
+        values.push(id);
+
+        const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${index} RETURNING *`;
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(400).json({
+                error: "El username o el email ya están registrados"
+            });
+        }
+        res.status(400).json({ error: error.message });
+    }
+});
+
+
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`)
