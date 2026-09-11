@@ -43,7 +43,7 @@ app.get('/ready', async (req, res) => {
             error: error.message
         });
     }
-});
+}); 
 
 // Ruta para obtener todos los usuarios
 app.get('/users', async (req, res) => {
@@ -99,6 +99,7 @@ app.post('/users', async (req, res) => {
                 error: "Faltan campos obligatorios (username, email)" 
             });
         }
+        
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         
         // Validación 2: Formato de email
@@ -212,7 +213,7 @@ app.delete('/users/:id', async (req, res) => {
         const { id } = req.params;
         const query = 'DELETE FROM users WHERE id = $1';
         const result = await pool.query(query, [id]);
-        if (result.rows.length === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: "Usuario no encontrado" });
         }
         res.sendStatus(204);
