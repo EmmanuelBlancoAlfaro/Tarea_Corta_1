@@ -43,8 +43,49 @@ app.get('/ready', async (req, res) => {
             error: error.message
         });
     }
+}); 
+
+// Ruta para obtener todos los usuarios
+app.get('/users', async (req, res) => {
+    try { 
+        const { created_at } = req.query; // EJ: /users?created_at=2026-09-09
+        let query = 'SELECT * FROM users';
+        let values = [];
+        
+        // Si envian un parametro de fecha, filtra los usuarios por esa fecha
+        if (created_at) {
+            // Creamos el rango para abarcar todo el día seleccionado
+            const startDate = `${created_at} 00:00:00`;
+            const endDate = `${created_at} 23:59:59`;
+
+            query += ' WHERE created_at >= $1 AND created_at <= $2';
+            values.push(startDate, endDate);
+        }
+
+        query += ' ORDER BY id ASC';
+
+        const result = await pool.query(query, values);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
+app.get('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = 'SELECT * FROM users WHERE id = $1';
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // POST
 // Crear un nuevo usuario
@@ -58,6 +99,7 @@ app.post('/users', async (req, res) => {
                 error: "Faltan campos obligatorios (username, email)" 
             });
         }
+        
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         
         // Validación 2: Formato de email
@@ -91,6 +133,91 @@ app.post('/users', async (req, res) => {
                 error: "El username o el email ya están registrados" 
             });
         }
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// PUT
+// Actualizar un usuario existente
+app.put('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { username, email } = req.body;
+
+        // Validación 1: Campos vacíos
+        if (!username || !email) {
+            return res.status(400).json({ 
+                error: "Faltan campos obligatorios (username, email)" 
+            });
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // Validación 2: Formato de email
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                error: "Formato de email inválido" 
+            });
+        }
+
+        // Validación 3: Longitud del username
+        if (username.length < 3 || username.length > 20) {
+            return res.status(400).json({ 
+                error: "El username debe tener entre 3 y 20 caracteres" 
+            });
+        }
+
+        // 4. Validar que el username no tenga números (/\d/ busca cualquier dígito)
+        const tieneNumeros = /\d/.test(username);
+        if (tieneNumeros) {
+            return res.status(400).json({ error: "El username no puede contener números" });
+        }
+
+        // Construimos la consulta dinámica de actualización de forma segura, por si se desea unicamente cambiar el username o el email, sin afectar el otro campo.
+        let fields = [];
+        let values = [];
+        let index = 1;
+
+        if (username) {
+            fields.push(`username = $${index++}`);
+            values.push(username);
+        }
+        if (email) {
+            fields.push(`email = $${index++}`);
+            values.push(email);
+        }
+
+        values.push(id);
+
+        const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${index} RETURNING *`;
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(400).json({
+                error: "El username o el email ya están registrados"
+            });
+        }
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// DELETE
+// Eliminar un usuario existente
+app.delete('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = 'DELETE FROM users WHERE id = $1';
+        const result = await pool.query(query, [id]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+        res.sendStatus(204);
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });

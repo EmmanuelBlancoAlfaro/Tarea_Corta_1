@@ -63,3 +63,40 @@ init.sql: Se define la tabla en postgres donde vivira la entidad con estado real
         - interval: 5s: Le indica a Docker que repita esta prueba de conexión cada 5 segundos.
         - timeout: 5s: Establece que si el comando tarda más de 5 segundos en responder, se contabiliza como un intento fallido.
         - retries: 5: Define que si la prueba falla 5 veces consecutivas, Docker marcará el contenedor como unhealthy (con errores). En cuanto la prueba pasa, el estado cambia a healthy (saludable).
+        - retries: 5: Define que si la prueba falla 5 veces consecutivas, Docker marcará el contenedor como unhealthy (con errores). En cuanto la prueba pasa, el estado cambia a healthy (saludable).
+
+## Explicación de endpoints.js
+
+    Librerias o dependencias externas:
+
+        - dotenv: Carga las variables de entorno desde el archivo .env de forma segura, usando una ruta absoluta para evitar problemas de ubicación.
+
+        - pg: Importa el módulo de conexión para PostgreSQ, configurandola instancia del Pool (lo definimos como constante) con las credenciales (usuario, host, base de datos, contraseña y puerto) obtenidas de las variables de entorno.
+
+        - express: Importa el framework web y crea la instancia principal de la aplicación (app), habilitando además el middleware express.json() para que el servidor pueda leer y entender los cuerpos de las peticiones en formato JSON, además que con el app es el que nos permite crear los GETs, POSTs, PUTs, DELETEs.
+
+    Definición de funciones: Vamos a colocar (req, res) => { ... }, ya que es la forma moderna de hacerlo, "req" es la petición del cliente y "res" la respuesta. El async es usado para las consultas asincrónicas con postgreSQL, haciendo que espere la respuesta de postgres antes de continuar, sin bloquear el servidor mientras tanto. 
+
+    Gets:
+
+        - /health: Get para revisar el estado de la app, sin ninguna conexión con la base de datos, por lo que no usamos el async.
+
+        - /ready: Este get su único propósito es revisar la conexión con la base de datos, para lo cual usamos el "await pool.query('SELECT 1');" para comprobar que existe conexión, si todo sale bien respondera con un 200 en el estado, en caso contrario será un 503.
+
+        - /users: El get de users trae un filtro que se realiza con la fecha de creación del usuario, en caso de querer hacer la prueba, asi se veria la consulta: "/users?created_at=2026-09-09", esto nos retornará todos los usuarios creado en esa fecha, pero para lograr esto, revisamos si hay un req o petición del usuario, el cual seria el "created_at = ...", si existe creamos un rango de todo el dia y contruimos el query para la respuesta, en caso que no lo pide se hace un "SELECT *" de los users y ya. Si todo es correcto se retorna un 200, en caso contrario un 500.
+
+        - /users/:id: Este get es igual que el anterior, solo que en vez de una fecha será el ID del user en específico, entonces solo tenemos que modificar el query y ya. En caso que el usuario solicitado no exista se retorna un estado 404, en caso que si exista y todo sea correcto un 200.
+
+    POST:
+
+        - /users: Crear usuario, en este obtendremos un usuario y email de peticion, el cual validaremos que todo este bien y construiremos el query si los datos ingresados son validos. Si todo funciona se retornara un 201, en caso de cualquier otro error un 400.
+
+    PUT:
+
+        - /users/:id: Actualiza un usuario, se deben realizar las mismas validaciones que en el POST, pero necesita mas lógica por si solo se desea actualizar el email o solo el username, para lograr esto se usó un "index" y el fields, para lograrlo usamos la función "${fields.join(', ')}", que gracias a la consulta de si existe username o el email, les colocamos un indice que hace referencia a los datos del value, entonces no habrá problema si solo existe uno o ambos, haciendo que se separen con una "," en caso que existan ambos. Si no existe el usuario que se desea modificar retornara el estado 404, en caso de funciona 200 y en caso de cualquier otro error el estado 400.
+
+    DELETE: 
+
+        - /users/:id: Eliminar un usuario, se va a eliminar un usuario mediante su id. Si todo sale bien retornara el estado 204, en caso contrario un 404 si no existe.
+
+    LISTEN: Este es el que esta escuchando en un puerto para recibir todas las consultas y asi enviarselas a la base de datos.
