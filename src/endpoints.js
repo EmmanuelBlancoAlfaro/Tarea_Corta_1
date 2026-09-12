@@ -69,7 +69,7 @@ app.get('/ready', async (req, res) => {
 }); 
 
 // Ruta para obtener todos los usuarios
-app.get('/users', async (req, res) => {
+app.get('/users',  requireAuth, async (req, res) => {
     try { 
         const { created_at } = req.query; // EJ: /users?created_at=2026-09-09
         let query = 'SELECT * FROM users';
@@ -94,7 +94,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-app.get('/users/:id', async (req, res) => {
+app.get('/users/:id',  requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const query = 'SELECT * FROM users WHERE id = $1';
@@ -162,7 +162,7 @@ app.post('/users', requireAuth, async (req, res) => {
 
 // PUT
 // Actualizar un usuario existente
-app.put('/users/:id', async (req, res) => {
+app.put('/users/:id',  requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { username, email } = req.body;
@@ -231,7 +231,7 @@ app.put('/users/:id', async (req, res) => {
 
 // DELETE
 // Eliminar un usuario existente
-app.delete('/users/:id', async (req, res) => {
+app.delete('/users/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const query = 'DELETE FROM users WHERE id = $1';
