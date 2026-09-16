@@ -74,6 +74,9 @@ app.get('/users', async (req, res) => {
 app.get('/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        if (isNaN(id)) {
+            return res.status(400).json({ error: "El ID debe ser un número" });
+        }
         const query = 'SELECT * FROM users WHERE id = $1';
         const result = await pool.query(query, [id]);
 
@@ -142,6 +145,9 @@ app.post('/users', async (req, res) => {
 app.put('/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        if (isNaN(id)) {
+            return res.status(400).json({ error: "El ID debe ser un número" });
+        }
         const { username, email } = req.body;
 
         // Validación 1: Campos vacíos
@@ -211,6 +217,9 @@ app.put('/users/:id', async (req, res) => {
 app.delete('/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        if (isNaN(id)) {
+            return res.status(400).json({ error: "El ID debe ser un número" });
+        }
         const query = 'DELETE FROM users WHERE id = $1';
         const result = await pool.query(query, [id]);
         if (result.rowCount === 0) {
