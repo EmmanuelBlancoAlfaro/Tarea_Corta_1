@@ -24,7 +24,7 @@ services:
       DB_HOST: postgres
       DB_NAME: ${DB_NAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_PORT: ${DB_PORT}
+      DB_PORT: 5432
       PORT: ${PORT}
     ports: 
       - "${PORT}:${PORT}"
@@ -52,7 +52,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HTTP_ENABLED: "true"
     ports:
-      - "8080:8080"
+      - "${KC_PORT}:8080"
     depends_on:
       postgres:
         condition: service_healthy

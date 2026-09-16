@@ -31,7 +31,9 @@ async function requireAuth(req, res, next) {
         req.user = payload;
         next();
     } catch(error) {
-        return res.status(401).json({error: 'invalid token'});
+        
+        return res.status(401).json({error: 'invalid token', details: error.message});
+        
     }
 }
 
