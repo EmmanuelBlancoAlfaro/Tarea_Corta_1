@@ -1,5 +1,6 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-
+const {createRemoteJWKSet, jwtVerify} = require('jose'); 
+const express = require('express');
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -10,11 +11,33 @@ const pool = new Pool({
     port: Number(process.env.DB_PORT),
 });
 
-const express = require('express');
+const ISSUER = `http://keycloak:8080/realms/user-realm`;
+const JWKS = createRemoteJWKSet(
+    new URL(`${ISSUER}/protocol/openid-connect/certs`)
+);
+
+async function requireAuth(req, res, next) {
+    const header = req.headers.authorization ?? '';
+    const token = header.startsWith('Bearer ') ? header.slice(7) : null
+    if (!token) {
+        return res.status(401).json({ error: 'missing bearer token'});
+    } 
+    try {
+        const {payload} = await jwtVerify(token, JWKS, {
+            audience: ["realm-management","broker","account"],
+            algorithms: ['RS256'],
+            clockTolerance: '5s',
+        });
+        req.user = payload;
+        next();
+    } catch(error) {
+        return res.status(401).json({error: 'invalid token'});
+    }
+}
+
 const app = express();
 
 app.use(express.json());
-
 
 // Gets
 
@@ -46,7 +69,7 @@ app.get('/ready', async (req, res) => {
 }); 
 
 // Ruta para obtener todos los usuarios
-app.get('/users', async (req, res) => {
+app.get('/users',  requireAuth, async (req, res) => {
     try { 
         const { created_at } = req.query; // EJ: /users?created_at=2026-09-09
         let query = 'SELECT * FROM users';
@@ -71,7 +94,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-app.get('/users/:id', async (req, res) => {
+app.get('/users/:id',  requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         if (isNaN(id)) {
@@ -92,7 +115,7 @@ app.get('/users/:id', async (req, res) => {
 
 // POST
 // Crear un nuevo usuario
-app.post('/users', async (req, res) => {
+app.post('/users', requireAuth, async (req, res) => {
     try {
         const { username, email } = req.body;
 
@@ -142,7 +165,7 @@ app.post('/users', async (req, res) => {
 
 // PUT
 // Actualizar un usuario existente
-app.put('/users/:id', async (req, res) => {
+app.put('/users/:id',  requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         if (isNaN(id)) {
@@ -214,7 +237,7 @@ app.put('/users/:id', async (req, res) => {
 
 // DELETE
 // Eliminar un usuario existente
-app.delete('/users/:id', async (req, res) => {
+app.delete('/users/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         if (isNaN(id)) {
