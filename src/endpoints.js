@@ -24,7 +24,6 @@ async function requireAuth(req, res, next) {
     } 
     try {
         const {payload} = await jwtVerify(token, JWKS, {
-            audience: ["realm-management","broker","account"],
             algorithms: ['RS256'],
             clockTolerance: '5s',
         });
