@@ -40,7 +40,9 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
     container_name: keycloak
-    command: ["start-dev"]
+    command: ["start-dev", "--import-realm"]
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm.json
     environment:
       KC_DB: ${KEYCLOAK_DB}
       KC_DB_URL_HOST: postgres
@@ -50,6 +52,9 @@ services:
       KC_DB_URL_DATABASE: ${DB_NAME}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_USER_NAME: ${KC_USER_NAME}
+      KC_CLIENT_SECRET: ${KC_CLIENT_SECRET}
+      KC_USER_PASSWORD: ${KC_USER_PASSWORD}
       KC_HTTP_ENABLED: "true"
     ports:
       - "${KC_PORT}:8080"
