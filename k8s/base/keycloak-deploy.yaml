@@ -1,76 +1,86 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: keycloak
+  name: keycloak
 spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: keycloak
-    template:
-        metadata:
-            labels:
-                app: keycloak
-        spec:
-            containers:
-                - name: keycloak
-                  image: quay.io/keycloak/keycloak:26.7
-                  command: ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm"]
-                  ports:
-                    - containerPort: 8080
-                  envFrom:
-                    - configMapRef:
-                        name: app-config
-                    - secretRef:
-                        name: app-secrets
-                  env:
-                    - name: KC_DB_URL_PORT
-                      value: "5432"
-                    - name: KC_DB_URL_HOST
-                      valueFrom:
-                        configMapKeyRef:
-                            name: app-config
-                            key: KC_DB_URL_HOST
-                    - name: KC_DB_USERNAME
-                      valueFrom:
-                        configMapKeyRef:
-                            name: app-config
-                            key: DB_USER
-                    - name: KC_DB_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                            name: app-secrets
-                            key: DB_USER
-                    - name: KC_DB_URL_DATABASE
-                      valueFrom:
-                        configMapKeyRef:
-                            name: app-config
-                            key: DB_NAME
-                    - name: KC_BOOTSTRAP_ADMIN_USERNAME
-                      valueFrom:
-                        secretKeyRef:
-                            name: app-secrets
-                            key: KEYCLOAK_ADMIN_PASSWORD
-                    - name: KC_HTTP_ENABLED
-                      value: "true"
-                  volumeMounts:
-                    - name: realm-config
-                      mountPath: /opt/keycloak/data/import/realm.json
-                      subPath: realm-export.json
-            volumes:
-                - name: realm-config
-                  configMap:
-                    name: keycloak-realm-configmap
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:26.7
+        args: ["start-dev", "--import-realm"]
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: app-config
+        - secretRef:
+            name: app-secrets
+        env:
+        - name: KC_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: KEYCLOAK_DB
+        - name: KC_DB_URL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: KC_DB_URL_HOST
+        - name: KC_DB_URL_PORT
+          value: "5432"
+        - name: KC_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_USER
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_PASSWORD
+        - name: KC_DB_URL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_NAME
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: KEYCLOAK_ADMIN
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: KEYCLOAK_ADMIN_PASSWORD
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        volumeMounts:
+        - name: realm-config
+          mountPath: /opt/keycloak/data/import/realm.json
+          subPath: realm-export.json
+      volumes:
+      - name: realm-config
+        configMap:
+          name: keycloak-realm-configmap
 ---
 apiVersion: v1
 kind: Service
 metadata:
-    name: keycloak
+  name: keycloak
 spec:
-    type: NodePort
-    selector:
-        app: keycloak
-    ports:
-        - port: 8080
-          targetPort: 8080
-          nodePort: 30080
+  type: NodePort
+  selector:
+    app: keycloak
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080

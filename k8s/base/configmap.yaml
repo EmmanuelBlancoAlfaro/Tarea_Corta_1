@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-    name: app-config
+  name: app-config
 data:
-    DB_NAME: "postgresdb"
-    DB_USER: "patito1"
-    DB_HOST: "postgres"
-    DB_PORT: "5432"   
-    PORT: "3000"
-    KEYCLOAK_DB: "postgres"
-    KC_DB_URL_HOST: "postgres"
-    KC_USER_NAME: "user-test"
+  DB_NAME: "postgresdb"
+  DB_USER: "patito1"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"   
+  PORT: "3000"
+  KEYCLOAK_DB: "postgres"
+  KC_DB_URL_HOST: "postgres"
+  KC_USER_NAME: "user-test"
