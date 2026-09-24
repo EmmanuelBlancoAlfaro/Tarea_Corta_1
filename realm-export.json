@@ -8,12 +8,33 @@
       "lastName": "test",
       "emailVerified": true,
       "credentials": [
-        
         {
           "type": "password",
           "value": "${KC_USER_PASSWORD}",
           "temporary": false
         }
+      ],
+      "realmRoles": [
+        "user-admin",
+        "default-roles-user-realm"
+      ]
+    },
+    {
+      "username": "user-readonly",
+      "email": "userreadonly@gmail.com",
+      "enabled": true,
+      "firstName": "readonly",
+      "lastName": "test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "readonly123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-user-realm"
       ]
     }
   ],

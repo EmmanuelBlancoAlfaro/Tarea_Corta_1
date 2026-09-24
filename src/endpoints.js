@@ -36,6 +36,16 @@ async function requireAuth(req, res, next) {
     }
 }
 
+function requireRole(role) {
+    return (req, res, next) => {
+        const roles = req.user?.realm_access?.roles || [];
+        if (!roles.includes(role)) {
+            return res.status(403).json({ error: 'forbidden: insufficient role' });
+        }
+        next();
+    };
+}
+
 const app = express();
 
 app.use(express.json());
@@ -116,7 +126,7 @@ app.get('/users/:id',  requireAuth, async (req, res) => {
 
 // POST
 // Crear un nuevo usuario
-app.post('/users', requireAuth, async (req, res) => {
+app.post('/users', requireAuth, requireRole('user-admin'), async (req, res) => {
     try {
         const { username, email } = req.body;
 
@@ -166,7 +176,7 @@ app.post('/users', requireAuth, async (req, res) => {
 
 // PUT
 // Actualizar un usuario existente
-app.put('/users/:id',  requireAuth, async (req, res) => {
+app.put('/users/:id', requireAuth, requireRole('user-admin'), async (req, res) => {
     try {
         const { id } = req.params;
         if (isNaN(id)) {
@@ -238,7 +248,7 @@ app.put('/users/:id',  requireAuth, async (req, res) => {
 
 // DELETE
 // Eliminar un usuario existente
-app.delete('/users/:id', requireAuth, async (req, res) => {
+app.delete('/users/:id', requireAuth, requireRole('user-admin'), async (req, res) => {
     try {
         const { id } = req.params;
         if (isNaN(id)) {

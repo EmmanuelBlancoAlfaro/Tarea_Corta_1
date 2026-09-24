@@ -6,5 +6,8 @@
 
 ## Kubernetes 
 
+- Se uso la IA para guiarnos en la separación de carpetas base y overlay de Kustomize y la sintaxis de kind-config.yaml.
 
 ## Pruebas automatizadas
+
+- Se uso la IA para saber como estructurar los mocks de pg y jose en Jest para las pruebas unitarias y la conexion con keycloak en las pruebas de integracion.

@@ -2,6 +2,11 @@
 
 Tarea Corta 1  - Contenerización de un servicio con Docker
 
+Integrantes:
+- Emmanuel Blanco Alfaro
+- Sebastián Chaves Rojas
+- Fabricio Hernández Ramírez
+
 ## Justificacion de elección de imagen y Dockerfile
 
 Esta sección explica las decisiones que tomamos al momento de elegir la imagen para el servicio web, y como se construyo el Dockerfile.
@@ -114,4 +119,95 @@ init.sql: Se define la tabla en postgres donde vivira la entidad con estado real
         - /users/:id: Eliminar un usuario, se va a eliminar un usuario mediante su id. Si todo sale bien retornara el estado 204, en caso contrario un 404 si no existe.
 
     LISTEN: Este es el que esta escuchando en un puerto para recibir todas las consultas y asi enviarselas a la base de datos.
-    
+
+## Guía de uso y comandos para evaluación
+
+### Requisitos previos
+- Docker y Docker Compose
+- Node.js (v18 o superior para correr pruebas)
+- Kind y kubectl (para la parte de Kubernetes)
+
+### Poner en marcha el sistema (Un solo comando)
+1. Copiar el archivo de variables de entorno:
+   ```bash
+   cp .env.example .env
+   ```
+2. Levantar los servicios con Docker Compose:
+   ```bash
+   docker compose up -d --build
+   ```
+   (O simplemente correr `./inicio.sh`)
+
+### Resumen del contrato de rutas
+- `/health` (GET): Pública. Responde 200 `{"status": "ok", "message": "The process is alive"}` sin tocar la base de datos.
+- `/ready` (GET): Pública. Consulta la base de datos; si conecta responde 200 `{"status": "ok", "message": "Database connection is healthy"}` y si falla responde 503 `{"status": "error", "message": "Database is not available"}`.
+- `/users` (GET): Protegida con token Bearer. Lista los usuarios registrados (200). Permite filtrar por fecha con `?created_at=2026-09-09`.
+- `/users/:id` (GET): Protegida con token Bearer. Retorna el usuario por ID (200), o 404 si no existe, o 400 si el ID no es numérico.
+- `/users` (POST): Protegida con token Bearer y rol `user-admin`. Crea un usuario con body `{"username": "carlos", "email": "carlos@test.com"}`. Responde 201 con el usuario creado. Si faltan datos o el formato es incorrecto da 400. Sin token da 401 y sin rol da 403.
+- `/users/:id` (PUT): Protegida con token Bearer y rol `user-admin`. Modifica username o email y responde 200 con el usuario actualizado. Si no existe da 404 y si los datos son inválidos da 400. Sin token da 401 y sin rol da 403.
+- `/users/:id` (DELETE): Protegida con token Bearer y rol `user-admin`. Elimina el usuario y responde 204 sin cuerpo, o 404 si no existe. Sin token da 401 y sin rol da 403.
+
+### Comprobación de persistencia
+Para verificar que los datos no se pierden al reiniciar los contenedores:
+1. Con el sistema arriba, registrar un usuario haciendo un POST a `/users`.
+2. Verificar con un GET a `/users` que el usuario aparece en la lista.
+3. Bajar los contenedores sin borrar el volumen:
+   ```bash
+   docker compose down
+   ```
+4. Volver a subir los contenedores:
+   ```bash
+   docker compose up -d
+   ```
+5. Hacer de nuevo un GET a `/users`. El usuario sigue ahí porque la información está guardada en el volumen `pgdata`.
+
+### Ejecutar las pruebas automatizadas
+Instalar dependencias una vez si no se ha hecho:
+```bash
+npm --prefix src install
+```
+
+- Para correr las pruebas unitarias:
+  ```bash
+  npm --prefix src test
+  ```
+  (O `npm test` dentro de la carpeta `src`). Son 28 pruebas que verifican toda la lógica y validaciones de los endpoints con mocks aislados.
+
+- Para correr las pruebas de integración:
+  ```bash
+  npm --prefix src run test:integration
+  ```
+  (Requiere que el docker compose esté levantado, ya que pide token real a Keycloak y prueba la persistencia en Postgres).
+
+### Apagar el sistema
+```bash
+docker compose down
+```
+
+### Despliegue en Kubernetes con Kind y Kustomize
+1. Crear el clúster con la configuración de puertos:
+   ```bash
+   kind create cluster --config kind-config.yaml --name tarea-cluster
+   ```
+2. Construir la imagen de la API y cargarla al clúster:
+   ```bash
+   docker build -t http_service:latest .
+   kind load docker-image http_service:latest --name tarea-cluster
+   ```
+3. Aplicar los manifiestos con Kustomize (aplica el overlay de 2 réplicas):
+   ```bash
+   kubectl apply -k k8s/overlay
+   ```
+4. Revisar que los pods y servicios estén corriendo:
+   ```bash
+   kubectl get pods
+   kubectl get services
+   ```
+5. Probar el endpoint en localhost:
+   ```bash
+   curl http://localhost:3000/health
+   ```
+6. Borrar el clúster al terminar:
+   ```bash
+   kind delete cluster --name tarea-cluster
+   ```

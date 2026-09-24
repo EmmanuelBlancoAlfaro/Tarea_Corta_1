@@ -16,6 +16,7 @@ services:
         interval: 5s
         timeout: 5s
         retries: 5
+        start_period: 10s
   http_service:
     build: .
     container_name: http_service
@@ -36,6 +37,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
@@ -61,6 +63,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 35s
 
 volumes:
   pgdata: 
