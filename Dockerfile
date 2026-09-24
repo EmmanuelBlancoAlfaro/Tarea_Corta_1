@@ -6,7 +6,7 @@ COPY /src/package*.json ./
 
 RUN npm install
 
-COPY /src/endpoints.js ./
+COPY /src/*.js ./
 
 FROM node:alpine AS runner 
 
@@ -16,4 +16,4 @@ EXPOSE 3000
 
 COPY --from=builder /build ./
 
-CMD ["node", "endpoints.js"]
+CMD ["node", "server.js"]
